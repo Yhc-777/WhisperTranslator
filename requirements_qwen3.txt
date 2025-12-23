@@ -1,0 +1,15 @@
+# Qwen3 依赖
+transformers>=4.51.0
+accelerate>=0.20.0
+sentencepiece
+tiktoken
+einops
+
+# 配置文件
+toml
+
+# 进度条
+tqdm
+
+# 可选：如果需要更快的推理速度
+# flash-attn>=2.0.0  # 需要CUDA，安装可能比较复杂

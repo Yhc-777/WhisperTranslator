@@ -1,43 +1,94 @@
+# ===================================================================
 # 基础参数设置 | Basic Parameter Settings
-work_dir = 'VIDEO PATH' # 待处理文件所在文件夹 | Folder containing the files to be processed
-export_dir = './temp' # output folder
-file_type = "audio"
+# ===================================================================
+
+work_dir = 'input' # 待处理文件所在文件夹 | Folder containing the files to be processed
+export_dir = './temp' # 输出文件夹 | Output folder
+file_type = "audio" # 文件类型 | File type: "audio" or "video"
 language = "en" # 原文语言 zh en jp | Original Language: zh en jp
-model_size = "large-v2"
+
+# ===================================================================
+# Whisper 模型设置 | Whisper Model Settings
+# ===================================================================
+
+# model_size = "large-v2"  # Whisper模型大小 | Whisper model size: tiny, base, small, medium, large-v2, large-v3
+# 也可以指定本地模型路径 | You can also specify a local model path:
+model_size = "./models/faster-whisper-tiny"
+
 initial_prompt = '这个是一个讲座' # 描述原文内容，帮助更好的输出结果 | Describe the content of the original text to assist in generating better output.
-export_srt = "No"
+
+# 使用VAD过滤 | Use VAD filter
+# 使用[Silero VAD model](https://github.com/snakers4/silero-vad)以检测并过滤音频中的无声段落（推荐小语种使用）
+# 【注意】使用VAD filter有优点亦有缺点，请用户自行根据音频内容决定是否启用. [about VAD filter](https://github.com/Ayanaminn/N46Whisper/blob/main/FAQ.md)
+# Use [Silero VAD model](https://github.com/snakers4/silero-vad) to detect and filter silent segments in audio (recommended for less common languages)
+# Note: Using VAD filter has both advantages and disadvantages. Users should decide whether to enable it based on the audio content.
+is_vad_filter = "True" # @param ["True", "False"]
+
+# Beam Size设置 | Beam Size Setting
+# Beam Size数值越高，在识别时探索的路径越多，这在一定范围内可以帮助提高识别准确性，但是相对的VRAM使用也会更高
+# 同时，Beam Size在超过5-10后有可能降低精确性，详情请见 https://arxiv.org/pdf/2204.05424.pdf
+# 默认设置为 5
+# A higher Beam Size value explores more paths during recognition, which can help improve recognition accuracy within a certain range. 
+# However, it also results in higher VRAM usage. Additionally, the accuracy may decrease when the Beam Size exceeds 5-10. 
+# For more details, please refer to https://arxiv.org/pdf/2204.05424.pdf. The default setting is 5.
+set_beam_size = 5
+
+# ===================================================================
+# 翻译和摘要设置 | Translation and Summary Settings
+# ===================================================================
 
 # 本地模型（若启用，请确保拥有>=10G的nvidia显卡）单独转录需要5G左右显存，如果显存不够可以把下面设置false
 # Local model (if enabled, please make sure you have an Nvidia graphics card with >= 10GB of VRAM). 
-# Transcribing individually requires approximately 5GB of VRAM. If you don't have enough VRAM,
-#  you can set the option below to false.
-if_translate = true
-target_language = "中文" # 输入你想要翻译的目标语言 | The target language you want to translate to.
-if_summary = true
+# Transcribing individually requires approximately 5GB of VRAM. If you don't have enough VRAM, you can set the option below to false.
 
-# 其他选项（可以不管）/Advanced settings 
-# (You can disregard the following content.)
+if_translate = true  # 是否启用翻译 | Enable translation
+target_language = "中文" # 输入你想要翻译的目标语言 | The target language you want to translate to.
+if_summary = true  # 是否生成摘要 | Enable summary generation
+
+# LLM 模型设置 | LLM Model Settings
+# 可以使用在线模型名称或本地模型路径 | You can use online model name or local model path
+# llm_model_name = "Qwen/Qwen3-0.6B"  # 默认使用 Qwen3-0.6B | Default: Qwen3-0.6B
+# 本地模型路径示例 | Local model path example:
+llm_model_name = "./models/Qwen3-0.6B"
+
+# ===================================================================
+# LLM 生成配置 | LLM Generation Configuration
+# ===================================================================
+
+# 翻译任务配置（使用非思考模式，更快更高效）
+# Translation task configuration (non-thinking mode, faster and more efficient)
+[translation_config]
+temperature = 0.7  # 温度参数，控制生成的随机性 | Temperature parameter, controls randomness (0.0-1.0)
+top_p = 0.8  # Top-p采样参数 | Top-p sampling parameter (0.0-1.0)
+top_k = 20  # Top-k采样参数 | Top-k sampling parameter
+max_new_tokens = 2048  # 最大生成token数 | Maximum number of tokens to generate
+presence_penalty = 1.5  # 存在惩罚，减少重复 | Presence penalty to reduce repetition (0.0-2.0)
+
+# 摘要任务配置（可使用思考模式，获得更好的结果）
+# Summary task configuration (thinking mode enabled for better results)
+[summary_config]
+temperature = 0.6  # 温度参数 | Temperature parameter
+top_p = 0.95  # Top-p采样参数 | Top-p sampling parameter
+top_k = 20  # Top-k采样参数 | Top-k sampling parameter
+max_new_tokens = 4096  # 最大生成token数 | Maximum number of tokens to generate
+presence_penalty = 1.5  # 存在惩罚 | Presence penalty
+
+# ===================================================================
+# 字幕格式设置 | Subtitle Format Settings
+# ===================================================================
+
+export_srt = "No"  # 是否导出SRT格式（已自动导出，此选项保留兼容）| Export SRT format (auto-exported, kept for compatibility)
 
 # 将存在空格的单行文本分割为多行（多句）。分割后的若干行均临时采用相同时间戳，且添加了adjust_required标记提示调整时间戳避免叠轴
 # 普通分割（Modest): 当空格后的文本长度超过5个字符，则另起一行
 # 全部分割（Aggressive): 只要遇到空格即另起一行
-# Split single-line text with spaces into multiple lines (multiple sentences). The resulting lines temporarily have the same timestamp and are marked with an "adjust_required" flag to indicate the need for timestamp adjustment to avoid overlapping captions.
+# Split single-line text with spaces into multiple lines (multiple sentences). 
+# The resulting lines temporarily have the same timestamp and are marked with an "adjust_required" flag 
+# to indicate the need for timestamp adjustment to avoid overlapping captions.
 # Modest Splitting: If the length of the text after a space exceeds 5 characters, start a new line.
 # Aggressive Splitting: Start a new line whenever a space is encountered.
 is_split = "No"  # @param ["No","Yes"]
 split_method = "Modest"  # @param ["Modest","Aggressive"]
 
-# 字幕格式（暂时默认default）
-sub_style = "default"
-
-# 使用VAD过滤/Use VAD filter
-# 使用[Silero VAD model](https://github.com/snakers4/silero-vad)以检测并过滤音频中的无声段落（推荐小语种使用）
-# 注意】使用VAD filter有优点亦有缺点，请用户自行根据音频内容决定是否启用. [about VAD filter](https://github.com/Ayanaminn/N46Whisper/blob/main/FAQ.md)
-is_vad_filter = "True" # @param ["True", "False"]
-
-# Beam Size Setting
-# Beam Size数值越高，在识别时探索的路径越多，这在一定范围内可以帮助提高识别准确性，但是相对的VRAM使用也会更高. 同时，Beam Size在超过5-10后有可能降低精确性，详情请见https://arxiv.org/pdf/2204.05424.pdf
-# 默认设置为 5
-# A higher Beam Size value explores more paths during recognition, which can help improve recognition accuracy within a certain range. However, it also results in higher VRAM usage. Additionally, the accuracy may decrease when the Beam Size exceeds 5-10. For more details, please refer to https://arxiv.org/pdf/2204.05424.pdf.
-# The default setting is 5.
-set_beam_size = 5 
+# 字幕样式设置 | Subtitle style settings
+sub_style = "default"  # 字幕样式（暂时默认default）| Subtitle style (currently default)
